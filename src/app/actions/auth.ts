@@ -26,7 +26,7 @@ const users = [
     id: 3,
     email: "chofer@smartwaste.com",
     password: "chofer123",
-    name: "María García",
+    name: "Raul Perez",
     role: "CHOFER",
     status: "activo",
     createdAt: "2024-02-15",
