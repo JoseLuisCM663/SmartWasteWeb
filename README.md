@@ -61,7 +61,3 @@ API_URL=
 ```bash
 npm run dev
 ```
-
-
-
-
