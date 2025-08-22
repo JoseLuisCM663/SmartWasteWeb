@@ -104,6 +104,7 @@ export function ContactSection() {
             </div>
           </div>
         </div>
+         <Mapa/>  {}
       </div>
     </section>
   )
