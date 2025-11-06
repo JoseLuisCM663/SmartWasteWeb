@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Mail, Phone, MapPin } from "lucide-react"
+import Mapa from "./Mapa"
 
 export function ContactSection() {
   return (
@@ -104,7 +105,7 @@ export function ContactSection() {
             </div>
           </div>
         </div>
-         <Mapa/>  {}
+         <Mapa/>
       </div>
     </section>
   )

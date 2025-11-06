@@ -1,13 +1,53 @@
-import { getUser } from "@/app/actions/auth"
+"use client"
+
+import { useEffect, useState } from "react"
+import { getUser } from "@/lib/auth"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { redirect } from "next/navigation"
+import { Loader2 } from "lucide-react"
 
-export default async function DashboardPage() {
-  const user = await getUser()
+interface User {
+  id: number
+  email: string
+  name: string
+  role: string
+}
 
-  if (!user) {
-    redirect("/login")
+export default function DashboardPage() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const userData = await getUser()
+        console.log("Usuario obtenido:", userData)
+
+        if (!userData) {
+          window.location.href = "/login"
+          return
+        }
+
+        setUser(userData)
+      } catch (error) {
+        console.error("Error al obtener usuario:", error)
+        window.location.href = "/login"
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkUser()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    )
   }
+
+  if (!user) return null
 
   return <DashboardLayout user={user} />
 }
