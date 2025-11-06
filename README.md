@@ -53,7 +53,7 @@ npm install
 Crea un archivo `.env.local` con el siguiente contenido:
 
 ```env
-API_URL=
+API_URL= http://localhost:8000
 ```
 
 4. *Inicia el servidor de desarrollo:*
