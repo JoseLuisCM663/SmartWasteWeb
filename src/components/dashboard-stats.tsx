@@ -62,19 +62,12 @@ export function DashboardStats() {
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState("7d")
   const [error, setError] = useState("")
-<<<<<<< HEAD
-  const router = useRouter()
-
-  useEffect(() => {
-    const token = localStorage.getItem("access_token")
-=======
   const [isOffline, setIsOffline] = useState(false)
   const router = useRouter()
   const isOnline = useOnline()
 
   useEffect(() => {
     const token = localStorageUtil.get<string>("access_token")
->>>>>>> Juan
     console.log("Token en useEffect:", token)
 
     if (!token) {
@@ -82,11 +75,7 @@ export function DashboardStats() {
     } else {
       loadDashboardData()
     }
-<<<<<<< HEAD
-  }, [router, timeRange])
-=======
   }, [router, timeRange, isOnline])
->>>>>>> Juan
 
   const loadDashboardData = async () => {
     try {
@@ -112,9 +101,6 @@ export function DashboardStats() {
       }
     } catch (err) {
       console.error(err)
-<<<<<<< HEAD
-      setError("Error al cargar estadísticas del dashboard")
-=======
       // Try to load from cache on error
       try {
         const cachedData = await dbUtils.getStats() as { timeRange: string; timestamp: number; [key: string]: unknown } | null
@@ -128,7 +114,6 @@ export function DashboardStats() {
       } catch (cacheErr) {
         setError("Error al cargar estadísticas del dashboard")
       }
->>>>>>> Juan
     } finally {
       setLoading(false)
     }
@@ -177,8 +162,6 @@ export function DashboardStats() {
 
   return (
     <div className="space-y-6">
-<<<<<<< HEAD
-=======
       {isOffline && (
         <Alert>
           <AlertTriangle className="h-4 w-4" />
@@ -188,7 +171,6 @@ export function DashboardStats() {
         </Alert>
       )}
 
->>>>>>> Juan
       {/* Selector de rango de tiempo */}
       <div className="flex items-center justify-between">
         <div>

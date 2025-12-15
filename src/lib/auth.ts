@@ -1,15 +1,10 @@
 "use client"
 
-<<<<<<< HEAD
-export async function getUser() {
-  const token = localStorage.getItem('access_token');
-=======
 import { localStorageUtil } from './localStorage'
 import { dbUtils } from './indexedDB'
 
 export async function getUser() {
   const token = localStorageUtil.get<string>('access_token');
->>>>>>> Juan
   if (!token) return null;
 
   try {
@@ -33,12 +28,6 @@ export async function getUser() {
     };
 
     console.log('Usuario mapeado:', mappedUser);
-<<<<<<< HEAD
-    return mappedUser;
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    return null;
-=======
 
     // Cache user data in IndexedDB
     await dbUtils.saveUser(mappedUser);
@@ -50,21 +39,12 @@ export async function getUser() {
     const cachedUsers = await dbUtils.getAllUsers();
     const cachedUser = cachedUsers.find(u => u.id === 1); // Assuming single user for now
     return cachedUser || null;
->>>>>>> Juan
   }
 }
 
 // Función auxiliar para mapear roles
 function mapRole(backendRole: string): string {
   const role = backendRole?.toLowerCase() ?? '';
-<<<<<<< HEAD
-  
-  if (role.includes('admin')) return 'ADMIN';
-  if (role.includes('chofer')) return 'CHOFER';
-  if (role.includes('usuario')) return 'USUARIO';
-  
-  return 'USUARIO'; // rol por defecto
-=======
 
   if (role.includes('admin')) return 'ADMIN';
   if (role.includes('chofer')) return 'CHOFER';
@@ -83,5 +63,4 @@ export function getToken(): string | null {
 
 export function removeToken() {
   localStorageUtil.remove('access_token');
->>>>>>> Juan
 }
