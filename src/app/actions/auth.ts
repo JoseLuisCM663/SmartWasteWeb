@@ -2,9 +2,6 @@
 
 import { cookies } from "next/headers"
 
-<<<<<<< HEAD
-
-=======
 // Type definitions
 interface User {
   id: number
@@ -32,7 +29,6 @@ interface Sensor {
   containerId: number | null
   createdAt: string
 }
->>>>>>> Juan
 
 // Simulated databases
 const users = [
