@@ -127,7 +127,7 @@ export function DashboardLayout({ user }: DashboardLayoutProps) {
       case "sensors":
         return <SensorManagement userRole={user.role} />
       case "collections":
-        return <CollectionLog userRole={user.role} userId={user.id} />
+        return <CollectionLog />
       case "simulator":
         return isAdmin ? <SensorSimulator /> : null
       default:
