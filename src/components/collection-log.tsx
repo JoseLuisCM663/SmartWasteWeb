@@ -53,8 +53,8 @@ interface CollectionLog {
   notes: string
   collectorName: string
   createdAt: string
-  routeDetails: { id: number; name: string } | null
-  containerDetails: Array<{ id: number; location: string }>
+  routeDetails: { id: number; name: string; description: string; status: string; createdAt: string; assignedUsers: number[] } | null
+  containerDetails: Array<{ id: number; location: string } | null>
 }
 
 interface Route {
@@ -162,7 +162,7 @@ export function CollectionLog() {
         setSelectedRoute(null)
         await loadCollectionLogs()
       } else {
-        setError(result.error || "Error al crear registro")
+        setError("Error al crear registro")
       }
     } catch (err) {
       setError("Error de conexión")
@@ -210,7 +210,7 @@ export function CollectionLog() {
         setSelectedRoute(null)
         await loadCollectionLogs()
       } else {
-        setError(result.error || "Error al actualizar registro")
+        setError("Error al actualizar registro")
       }
     } catch (err) {
       setError("Error de conexión")
@@ -233,7 +233,7 @@ export function CollectionLog() {
         setDeletingLog(null)
         await loadCollectionLogs()
       } else {
-        setError(result.error || "Error al eliminar registro")
+        setError("Error al eliminar registro")
       }
     } catch (err) {
       setError("Error de conexión")
@@ -400,7 +400,7 @@ export function CollectionLog() {
                   <TableCell>
                     <div className="flex items-center space-x-1">
                       <Truck className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm">{log.containerDetails.length} contenedores</span>
+                      <span className="text-sm">{log.containerDetails.filter(c => c !== null).length} contenedores</span>
                     </div>
                   </TableCell>
                   <TableCell>{getStatusBadge(log.status)}</TableCell>
@@ -605,12 +605,12 @@ export function CollectionLog() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-600">
-                  Contenedores Recolectados ({viewingLog.containerDetails.length})
+                  Contenedores Recolectados ({viewingLog.containerDetails.filter(c => c !== null).length})
                 </Label>
                 <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
-                  {viewingLog.containerDetails.map((container) => (
-                    <div key={container.id} className="text-sm p-2 bg-gray-50 rounded">
-                      <span className="font-medium">ID: {container.id}</span> - {container.location}
+                  {viewingLog.containerDetails.filter(c => c !== null).map((container) => (
+                    <div key={container!.id} className="text-sm p-2 bg-gray-50 rounded">
+                      <span className="font-medium">ID: {container!.id}</span> - {container!.location}
                     </div>
                   ))}
                 </div>

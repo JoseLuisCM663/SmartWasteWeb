@@ -18,7 +18,7 @@ interface Sensor {
   description: string
   status: string
   containerId: number | null
-  containerDetails: { id: number; location: string } | null
+  containerDetails: { id: number; location: string; capacity: number; description: string; status: string; fillLevel: number; routeId: number | null; createdAt: string } | null | undefined
 }
 
 export function SensorSimulator() {
@@ -27,7 +27,7 @@ export function SensorSimulator() {
   const [readingCount, setReadingCount] = useState("10")
   const [interval, setInterval] = useState("5")
   const [isGenerating, setIsGenerating] = useState(false)
-  const [result, setResult] = useState<{ success: boolean; message: string; data?: any } | null>(null)
+  const [result, setResult] = useState<{ success: boolean; message: string; data?: unknown } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -222,13 +222,13 @@ export function SensorSimulator() {
               )}
               <AlertDescription className={result.success ? "text-green-800" : "text-red-800"}>
                 {result.message}
-                {result.success && result.data && (
+                {result.success && result.data ? (
                   <div className="mt-2 text-sm">
-                    <p>• Lecturas generadas: {result.data.count}</p>
-                    <p>• Sensor ID: {result.data.sensorId}</p>
-                    <p>• Rango de tiempo: {result.data.timeRange}</p>
+                    <p>• Lecturas generadas: {(result.data as { count: number; sensorId: number; timeRange: string })?.count}</p>
+                    <p>• Sensor ID: {(result.data as { count: number; sensorId: number; timeRange: string })?.sensorId}</p>
+                    <p>• Rango de tiempo: {(result.data as { count: number; sensorId: number; timeRange: string })?.timeRange}</p>
                   </div>
-                )}
+                ) : null}
               </AlertDescription>
             </Alert>
           )}

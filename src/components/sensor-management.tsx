@@ -31,7 +31,7 @@ interface Sensor {
   status: string
   containerId: number | null
   createdAt: string
-  containerDetails: { id: number; location: string; status: string } | null
+  containerDetails: { id: number; location: string; capacity: number; description: string; status: string; fillLevel: number; routeId: number | null; createdAt: string } | null | undefined
 }
 
 interface Container {
@@ -46,7 +46,7 @@ interface SensorReading {
   value: number
   unit: string
   timestamp: string
-  sensorDetails: { id: number; type: string; description: string } | null
+  sensorDetails: { id: number; type: string; description: string; status: string; containerId: number | null; createdAt: string } | null | undefined
 }
 
 interface SensorHistoryData {
@@ -160,7 +160,7 @@ export function SensorManagement({ userRole = "ADMIN" }: SensorManagementProps) 
         setIsCreateDialogOpen(false)
         await loadSensors()
       } else {
-        setError(result.error || "Error al crear sensor")
+        setError("Error al crear sensor")
       }
     } catch (err) {
       setError("Error de conexión")
@@ -212,7 +212,7 @@ export function SensorManagement({ userRole = "ADMIN" }: SensorManagementProps) 
         setEditingSensor(null)
         await loadSensors()
       } else {
-        setError(result.error || "Error al actualizar sensor")
+        setError("Error al actualizar sensor")
       }
     } catch (err) {
       setError("Error de conexión")
@@ -235,7 +235,7 @@ export function SensorManagement({ userRole = "ADMIN" }: SensorManagementProps) 
         setDeletingSensor(null)
         await loadSensors()
       } else {
-        setError(result.error || "Error al eliminar sensor")
+        setError("Error al eliminar sensor")
       }
     } catch (err) {
       setError("Error de conexión")

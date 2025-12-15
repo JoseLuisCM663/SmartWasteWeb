@@ -30,7 +30,7 @@ interface Container {
   fillLevel: number
   routeId: number | null
   createdAt: string
-  routeDetails: { id: number; name: string; status: string } | null
+  routeDetails: { id: number; name: string; description: string; status: string; createdAt: string; assignedUsers: number[] } | null | undefined
 }
 
 interface Route {
@@ -107,7 +107,7 @@ export function ContainerManagement() {
         setIsCreateDialogOpen(false)
         await loadContainers()
       } else {
-        setError(result.error || "Error al crear contenedor")
+        setError("Error al crear contenedor")
       }
     } catch (err) {
       setError("Error de conexión")
@@ -144,7 +144,7 @@ export function ContainerManagement() {
         setEditingContainer(null)
         await loadContainers()
       } else {
-        setError(result.error || "Error al actualizar contenedor")
+        setError("Error al actualizar contenedor")
       }
     } catch (err) {
       setError("Error de conexión")
@@ -167,7 +167,7 @@ export function ContainerManagement() {
         setDeletingContainer(null)
         await loadContainers()
       } else {
-        setError(result.error || "Error al eliminar contenedor")
+        setError("Error al eliminar contenedor")
       }
     } catch (err) {
       setError("Error de conexión")

@@ -2,6 +2,34 @@
 
 import { cookies } from "next/headers"
 
+// Type definitions
+interface User {
+  id: number
+  email: string
+  password: string
+  name: string
+  role: string
+  status: string
+  createdAt: string
+}
+
+interface SensorReading {
+  id: number
+  sensorId: number
+  value: number
+  unit: string
+  timestamp: string
+}
+
+interface Sensor {
+  id: number
+  type: string
+  description: string
+  status: string
+  containerId: number | null
+  createdAt: string
+}
+
 // Simulated databases
 const users = [
   {
@@ -131,7 +159,7 @@ const containers = [
   },
 ]
 
-const sensors = [
+const sensors: Sensor[] = [
   {
     id: 1,
     type: "nivel",
@@ -261,7 +289,7 @@ const collectionLogs = [
 ]
 
 // Simple JWT simulation
-function createToken(user: any) {
+function createToken(user: User) {
   const payload = {
     id: user.id,
     email: user.email,
@@ -399,7 +427,7 @@ export async function generateSensorReadings(formData: FormData) {
         unit = "units"
     }
 
-    const reading = {
+    const reading: SensorReading = {
       id: Math.max(...sensorReadings.map((r) => r.id), 0) + newReadings.length + 1,
       sensorId,
       value,

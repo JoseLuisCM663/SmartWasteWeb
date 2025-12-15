@@ -1,28 +1,37 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
-  BarChart,
+  Loader2,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Activity,
+  Route,
+  Trash2,
+  Users
+} from "lucide-react"
+import {
   Bar,
-  XAxis,
-  YAxis,
+  BarChart,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
   Line,
-  PieChart,
+  LineChart,
   Pie,
-  Cell,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
 } from "recharts"
-import { Users, Route, Trash2, Activity, Clock, AlertTriangle, CheckCircle, Loader2 } from "lucide-react"
 import { getDashboardStats } from "@/app/actions/auth"
 
+// Tipado de los datos del dashboard
 interface DashboardData {
   summary: {
     totalRoutes: number
@@ -50,10 +59,18 @@ export function DashboardStats() {
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState("7d")
   const [error, setError] = useState("")
+  const router = useRouter()
 
   useEffect(() => {
-    loadDashboardData()
-  }, [timeRange])
+    const token = localStorage.getItem("access_token")
+    console.log("Token en useEffect:", token)
+
+    if (!token) {
+      router.push("/login")
+    } else {
+      loadDashboardData()
+    }
+  }, [router, timeRange])
 
   const loadDashboardData = async () => {
     try {
@@ -62,6 +79,7 @@ export function DashboardStats() {
       const dashboardData = await getDashboardStats(timeRange)
       setData(dashboardData)
     } catch (err) {
+      console.error(err)
       setError("Error al cargar estadísticas del dashboard")
     } finally {
       setLoading(false)
@@ -74,12 +92,12 @@ export function DashboardStats() {
       en_progreso: { label: "En Progreso", className: "bg-blue-100 text-blue-800", icon: Clock },
       pendiente: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800", icon: Clock },
       normal: { label: "Normal", className: "bg-green-100 text-green-800", icon: CheckCircle },
-      alerta: { label: "Alerta", className: "bg-red-100 text-red-800", icon: AlertTriangle },
+      alerta: { label: "Alerta", className: "bg-red-100 text-red-800", icon: AlertTriangle }
     }
     const config = statusConfig[status as keyof typeof statusConfig] || {
       label: status,
       className: "bg-gray-100 text-gray-800",
-      icon: CheckCircle,
+      icon: CheckCircle
     }
     return (
       <Badge className={config.className}>
@@ -87,15 +105,6 @@ export function DashboardStats() {
         {config.label}
       </Badge>
     )
-  }
-
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString("es-ES", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
   }
 
   if (loading) {
@@ -120,7 +129,7 @@ export function DashboardStats() {
 
   return (
     <div className="space-y-6">
-      {/* Time Range Selector */}
+      {/* Selector de rango de tiempo */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Dashboard de Estadísticas</h2>
@@ -139,7 +148,7 @@ export function DashboardStats() {
         </Select>
       </div>
 
-      {/* Summary Cards */}
+      {/* Tarjetas resumen */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -186,9 +195,8 @@ export function DashboardStats() {
         </Card>
       </div>
 
-      {/* Charts Row */}
+      {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Route Capacity Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Capacidad por Ruta</CardTitle>
@@ -208,7 +216,6 @@ export function DashboardStats() {
           </CardContent>
         </Card>
 
-        {/* Container Usage Trend */}
         <Card>
           <CardHeader>
             <CardTitle>Tendencia de Uso</CardTitle>
@@ -224,103 +231,6 @@ export function DashboardStats() {
                 <Line type="monotone" dataKey="usage" stroke="#16a34a" strokeWidth={2} name="Uso %" />
               </LineChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Container Status Pie Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Estado de Contenedores</CardTitle>
-          <CardDescription>Distribución de contenedores por nivel de llenado</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={data.containerStatus}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {data.containerStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tables Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Collections */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recolecciones Recientes</CardTitle>
-            <CardDescription>Últimas actividades de recolección registradas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ruta</TableHead>
-                  <TableHead>Contenedor</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Tiempo</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.recentCollections.map((collection) => (
-                  <TableRow key={collection.id}>
-                    <TableCell className="font-medium">{collection.route}</TableCell>
-                    <TableCell className="text-sm text-gray-600">{collection.container}</TableCell>
-                    <TableCell>{getStatusBadge(collection.status)}</TableCell>
-                    <TableCell className="text-sm text-gray-500">{formatTimestamp(collection.timestamp)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Sensor Readings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Lecturas de Sensores</CardTitle>
-            <CardDescription>Últimas lecturas de sensores IoT</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sensor</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Tiempo</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.sensorReadings.map((reading) => (
-                  <TableRow key={reading.id}>
-                    <TableCell className="font-medium">{reading.sensor}</TableCell>
-                    <TableCell>
-                      {reading.value}
-                      {reading.unit}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(reading.status)}</TableCell>
-                    <TableCell className="text-sm text-gray-500">{formatTimestamp(reading.timestamp)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
           </CardContent>
         </Card>
       </div>

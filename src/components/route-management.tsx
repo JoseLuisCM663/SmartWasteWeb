@@ -34,7 +34,7 @@ interface Route {
   description: string
   status: string
   createdAt: string
-  assignedUsersDetails: Array<{ id: number; name: string; role: string }>
+  assignedUsersDetails: Array<{ id: number; name: string; role: string } | null>
 }
 
 interface AssignableUser {
@@ -86,7 +86,7 @@ export function RouteManagement({ userRole = "ADMIN", userId }: RouteManagementP
       // Filter routes based on user role
       let filteredRoutes = routesData
       if (!isAdmin && userId) {
-        filteredRoutes = routesData.filter((route) => route.assignedUsersDetails.some((user) => user.id === userId))
+        filteredRoutes = routesData.filter((route) => route.assignedUsersDetails.some((user) => user && user.id === userId))
       }
 
       setRoutes(filteredRoutes)
@@ -129,7 +129,7 @@ export function RouteManagement({ userRole = "ADMIN", userId }: RouteManagementP
         setIsCreateDialogOpen(false)
         await loadRoutes()
       } else {
-        setError(result.error || "Error al crear ruta")
+        setError("Error al crear ruta")
       }
     } catch (err) {
       setError("Error de conexión")
@@ -154,7 +154,7 @@ export function RouteManagement({ userRole = "ADMIN", userId }: RouteManagementP
 
   const handleAssignUsers = (route: Route) => {
     setAssigningRoute(route)
-    setSelectedUserIds(route.assignedUsersDetails.map((user) => user.id))
+    setSelectedUserIds(route.assignedUsersDetails.filter(user => user !== null).map((user) => user!.id))
     setIsAssignDialogOpen(true)
     setUserSearchTerm("")
     setError("")
@@ -175,7 +175,7 @@ export function RouteManagement({ userRole = "ADMIN", userId }: RouteManagementP
         setEditingRoute(null)
         await loadRoutes()
       } else {
-        setError(result.error || "Error al actualizar ruta")
+        setError("Error al actualizar ruta")
       }
     } catch (err) {
       setError("Error de conexión")
@@ -198,7 +198,7 @@ export function RouteManagement({ userRole = "ADMIN", userId }: RouteManagementP
         setDeletingRoute(null)
         await loadRoutes()
       } else {
-        setError(result.error || "Error al eliminar ruta")
+        setError("Error al eliminar ruta")
       }
     } catch (err) {
       setError("Error de conexión")
@@ -222,7 +222,7 @@ export function RouteManagement({ userRole = "ADMIN", userId }: RouteManagementP
         setSelectedUserIds([])
         await loadRoutes()
       } else {
-        setError(result.error || "Error al asignar usuarios")
+        setError("Error al asignar usuarios")
       }
     } catch (err) {
       setError("Error de conexión")
@@ -331,18 +331,18 @@ export function RouteManagement({ userRole = "ADMIN", userId }: RouteManagementP
                   <TableCell>{getStatusBadge(route.status)}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {route.assignedUsersDetails.length === 0 ? (
+                      {route.assignedUsersDetails.filter(user => user !== null).length === 0 ? (
                         <span className="text-gray-500 text-sm">Sin asignar</span>
                       ) : (
-                        route.assignedUsersDetails.slice(0, 2).map((user) => (
-                          <Badge key={user.id} variant="outline" className="text-xs">
-                            {user.name}
+                        route.assignedUsersDetails.filter(user => user !== null).slice(0, 2).map((user) => (
+                          <Badge key={user!.id} variant="outline" className="text-xs">
+                            {user!.name}
                           </Badge>
                         ))
                       )}
-                      {route.assignedUsersDetails.length > 2 && (
+                      {route.assignedUsersDetails.filter(user => user !== null).length > 2 && (
                         <Badge variant="outline" className="text-xs">
-                          +{route.assignedUsersDetails.length - 2} más
+                          +{route.assignedUsersDetails.filter(user => user !== null).length - 2} más
                         </Badge>
                       )}
                     </div>
