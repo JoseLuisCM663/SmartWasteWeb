@@ -78,6 +78,8 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Configuración vacía de Turbopack para silenciar el error
+  turbopack: {},
 };
 
 export default withPWA(nextConfig);
