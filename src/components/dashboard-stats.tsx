@@ -30,6 +30,9 @@ import {
   YAxis
 } from "recharts"
 import { getDashboardStats } from "@/app/actions/auth"
+import { dbUtils } from "@/lib/indexedDB"
+import { localStorageUtil } from "@/lib/localStorage"
+import { useOnline } from "@/hooks/use-online"
 
 // Tipado de los datos del dashboard
 interface DashboardData {
@@ -59,10 +62,12 @@ export function DashboardStats() {
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState("7d")
   const [error, setError] = useState("")
+  const [isOffline, setIsOffline] = useState(false)
   const router = useRouter()
+  const isOnline = useOnline()
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token")
+    const token = localStorageUtil.get<string>("access_token")
     console.log("Token en useEffect:", token)
 
     if (!token) {
@@ -70,17 +75,45 @@ export function DashboardStats() {
     } else {
       loadDashboardData()
     }
-  }, [router, timeRange])
+  }, [router, timeRange, isOnline])
 
   const loadDashboardData = async () => {
     try {
       setLoading(true)
       setError("")
-      const dashboardData = await getDashboardStats(timeRange)
-      setData(dashboardData)
+      setIsOffline(false)
+
+      if (isOnline) {
+        // Online: fetch from server and cache
+        const dashboardData = await getDashboardStats(timeRange)
+        setData(dashboardData)
+        await dbUtils.saveStats({ ...dashboardData, timeRange, timestamp: Date.now() })
+        localStorageUtil.set('lastStatsUpdate', Date.now())
+      } else {
+        // Offline: load from cache
+        const cachedData = await dbUtils.getStats() as { timeRange: string; timestamp: number; [key: string]: unknown } | null
+        if (cachedData && cachedData.timeRange === timeRange) {
+          setData(cachedData as unknown as DashboardData)
+          setIsOffline(true)
+        } else {
+          setError("No hay datos disponibles sin conexión")
+        }
+      }
     } catch (err) {
       console.error(err)
-      setError("Error al cargar estadísticas del dashboard")
+      // Try to load from cache on error
+      try {
+        const cachedData = await dbUtils.getStats() as { timeRange: string; timestamp: number; [key: string]: unknown } | null
+        if (cachedData && cachedData.timeRange === timeRange) {
+          setData(cachedData as unknown as DashboardData)
+          setIsOffline(true)
+          setError("Mostrando datos en caché")
+        } else {
+          setError("Error al cargar estadísticas del dashboard")
+        }
+      } catch (cacheErr) {
+        setError("Error al cargar estadísticas del dashboard")
+      }
     } finally {
       setLoading(false)
     }
@@ -129,6 +162,15 @@ export function DashboardStats() {
 
   return (
     <div className="space-y-6">
+      {isOffline && (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Modo sin conexión: Mostrando datos en caché. Última actualización: {new Date(localStorageUtil.get<number>('lastStatsUpdate') || 0).toLocaleString()}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Selector de rango de tiempo */}
       <div className="flex items-center justify-between">
         <div>

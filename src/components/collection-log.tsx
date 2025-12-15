@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -43,6 +43,8 @@ import {
   getAllRoutes,
   getAllContainers,
 } from "@/app/actions/auth"
+import { dbUtils } from "@/lib/indexedDB"
+import { useOnline } from "@/hooks/use-online"
 
 interface CollectionLog {
   id: number
@@ -60,7 +62,11 @@ interface CollectionLog {
 interface Route {
   id: number
   name: string
+  description: string
   status: string
+  createdAt: string
+  assignedUsers: number[]
+  assignedUsersDetails?: Array<{ id: number; name: string; role: string } | null>
 }
 
 interface Container {
@@ -91,42 +97,85 @@ export function CollectionLog() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [pendingSync, setPendingSync] = useState(false)
+  const isOnline = useOnline()
+
+  const loadCollectionLogs = useCallback(async () => {
+    try {
+      setLoading(true)
+      if (isOnline) {
+        const logsData = await getAllCollectionLogs()
+        setLogs(logsData)
+        for (const log of logsData) {
+          await dbUtils.saveCollectionLog(log)
+        }
+      } else {
+        const cachedLogs = (await dbUtils.getAllCollectionLogs()) as unknown as CollectionLog[]
+        setLogs(cachedLogs)
+        setPendingSync(true)
+      }
+    } catch (err) {
+      try {
+        const cachedLogs = (await dbUtils.getAllCollectionLogs()) as unknown as CollectionLog[]
+        setLogs(cachedLogs)
+        setPendingSync(true)
+      } catch (cacheErr) {
+        setError("Error al cargar bitácora de recolección")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [isOnline])
+
+  const loadRoutes = useCallback(async () => {
+    try {
+      if (isOnline) {
+        const routesData = await getAllRoutes()
+        setRoutes(routesData)
+        for (const route of routesData) {
+          await dbUtils.saveRoute(route)
+        }
+      } else {
+        const cachedRoutes = (await dbUtils.getAllRoutes()) as unknown as Route[]
+        setRoutes(cachedRoutes)
+      }
+    } catch (err) {
+      try {
+        const cachedRoutes = (await dbUtils.getAllRoutes()) as unknown as Route[]
+        setRoutes(cachedRoutes)
+      } catch (cacheErr) {
+        console.error("Error al cargar rutas")
+      }
+    }
+  }, [isOnline])
+
+  const loadContainers = useCallback(async () => {
+    try {
+      if (isOnline) {
+        const containersData = await getAllContainers()
+        setContainers(containersData)
+        for (const container of containersData) {
+          await dbUtils.saveContainer(container)
+        }
+      } else {
+        const cachedContainers = (await dbUtils.getAllContainers()) as unknown as Container[]
+        setContainers(cachedContainers)
+      }
+    } catch (err) {
+      try {
+        const cachedContainers = (await dbUtils.getAllContainers()) as unknown as Container[]
+        setContainers(cachedContainers)
+      } catch (cacheErr) {
+        console.error("Error al cargar contenedores")
+      }
+    }
+  }, [isOnline])
 
   useEffect(() => {
     loadCollectionLogs()
     loadRoutes()
     loadContainers()
-  }, [])
-
-  const loadCollectionLogs = async () => {
-    try {
-      setLoading(true)
-      const logsData = await getAllCollectionLogs()
-      setLogs(logsData)
-    } catch (err) {
-      setError("Error al cargar bitácora de recolección")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadRoutes = async () => {
-    try {
-      const routesData = await getAllRoutes()
-      setRoutes(routesData)
-    } catch (err) {
-      console.error("Error al cargar rutas")
-    }
-  }
-
-  const loadContainers = async () => {
-    try {
-      const containersData = await getAllContainers()
-      setContainers(containersData)
-    } catch (err) {
-      console.error("Error al cargar contenedores")
-    }
-  }
+  }, [loadCollectionLogs, loadRoutes, loadContainers])
 
   const filteredLogs = logs.filter((log) => {
     const matchesSearch =
@@ -151,18 +200,39 @@ export function CollectionLog() {
     setError("")
 
     try {
-      // Add selected containers to form data
       formData.append("containerIds", JSON.stringify(selectedContainers))
 
-      const result = await createCollectionLog(formData)
-      if (result.success) {
-        setSuccess("Registro de recolección creado correctamente")
+      if (isOnline) {
+        const result = await createCollectionLog(formData)
+        if (result.success) {
+          setSuccess("Registro de recolección creado correctamente")
+          setIsCreateDialogOpen(false)
+          setSelectedContainers([])
+          setSelectedRoute(null)
+          await loadCollectionLogs()
+        } else {
+          setError("Error al crear registro")
+        }
+      } else {
+        const newLog = {
+          id: Date.now(),
+          date: formData.get('date') as string,
+          routeId: selectedRoute!,
+          containerIds: selectedContainers,
+          status: formData.get('status') as string,
+          notes: formData.get('notes') as string,
+          collectorName: formData.get('collectorName') as string,
+          createdAt: new Date().toISOString(),
+          routeDetails: routes.find(r => r.id === selectedRoute) || null,
+          containerDetails: selectedContainers.map(id => containers.find(c => c.id === id) || null)
+        }
+        await dbUtils.saveCollectionLog(newLog)
+        setLogs(prev => [...prev, newLog])
+        setSuccess("Registro guardado localmente (sincronizará cuando esté online)")
         setIsCreateDialogOpen(false)
         setSelectedContainers([])
         setSelectedRoute(null)
-        await loadCollectionLogs()
-      } else {
-        setError("Error al crear registro")
+        setPendingSync(true)
       }
     } catch (err) {
       setError("Error de conexión")
@@ -275,10 +345,8 @@ export function CollectionLog() {
 
   return (
     <div className="space-y-6">
-      {/* Header Actions and Filters */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
         <div className="flex flex-col sm:flex-row gap-4 flex-1">
-          {/* Search */}
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
@@ -289,7 +357,6 @@ export function CollectionLog() {
             />
           </div>
 
-          {/* Filters */}
           <div className="flex gap-2">
             <Select value={routeFilter} onValueChange={setRouteFilter}>
               <SelectTrigger className="w-[140px]">
@@ -346,7 +413,6 @@ export function CollectionLog() {
         </Button>
       </div>
 
-      {/* Alerts */}
       {error && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -360,7 +426,15 @@ export function CollectionLog() {
         </Alert>
       )}
 
-      {/* Collection Logs Table */}
+      {pendingSync && (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Hay cambios pendientes de sincronización. Se sincronizarán automáticamente cuando vuelva la conexión.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="rounded-md border bg-white">
         <Table>
           <TableHeader>
@@ -443,7 +517,6 @@ export function CollectionLog() {
         </Table>
       </div>
 
-      {/* Create Collection Log Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -571,7 +644,6 @@ export function CollectionLog() {
         </DialogContent>
       </Dialog>
 
-      {/* View Collection Log Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -637,8 +709,6 @@ export function CollectionLog() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit and Delete dialogs would be similar to create, but I'll keep them shorter for space */}
-      {/* Edit Collection Log Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -716,7 +786,6 @@ export function CollectionLog() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Collection Log Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

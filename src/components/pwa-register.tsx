@@ -5,7 +5,7 @@ import { toast } from '@/hooks/use-toast'
 
 export function PWARegister() {
   const [isInstallable, setIsInstallable] = useState(false)
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null)
 
   useEffect(() => {
     // Registrar el service worker
@@ -50,8 +50,9 @@ export function PWARegister() {
   const handleInstall = async () => {
     if (!deferredPrompt) return
 
-    deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
+    const prompt = deferredPrompt as { prompt: () => void; userChoice: Promise<{ outcome: string }> }
+    prompt.prompt()
+    const { outcome } = await prompt.userChoice
 
     if (outcome === 'accepted') {
       setIsInstallable(false)

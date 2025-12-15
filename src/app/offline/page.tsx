@@ -1,3 +1,5 @@
+"use client"
+
 import { AlertCircle, Wifi } from 'lucide-react'
 
 export default function OfflinePage() {

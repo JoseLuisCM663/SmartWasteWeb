@@ -1,7 +1,10 @@
 "use client"
 
+import { localStorageUtil } from './localStorage'
+import { dbUtils } from './indexedDB'
+
 export async function getUser() {
-  const token = localStorage.getItem('access_token');
+  const token = localStorageUtil.get<string>('access_token');
   if (!token) return null;
 
   try {
@@ -25,20 +28,39 @@ export async function getUser() {
     };
 
     console.log('Usuario mapeado:', mappedUser);
+
+    // Cache user data in IndexedDB
+    await dbUtils.saveUser(mappedUser);
+
     return mappedUser;
   } catch (error) {
     console.error('Error fetching user:', error);
-    return null;
+    // Try to get from cache
+    const cachedUsers = await dbUtils.getAllUsers();
+    const cachedUser = cachedUsers.find(u => u.id === 1); // Assuming single user for now
+    return cachedUser || null;
   }
 }
 
 // Función auxiliar para mapear roles
 function mapRole(backendRole: string): string {
   const role = backendRole?.toLowerCase() ?? '';
-  
+
   if (role.includes('admin')) return 'ADMIN';
   if (role.includes('chofer')) return 'CHOFER';
   if (role.includes('usuario')) return 'USUARIO';
-  
+
   return 'USUARIO'; // rol por defecto
+}
+
+export function setToken(token: string) {
+  localStorageUtil.set('access_token', token);
+}
+
+export function getToken(): string | null {
+  return localStorageUtil.get<string>('access_token');
+}
+
+export function removeToken() {
+  localStorageUtil.remove('access_token');
 }
